@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ask your AI Tutor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom scrollbar for chat */
+        .chat-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .chat-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .chat-container::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        .chat-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* Animation for messages */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        /* Subject button active state */
+        .subject-btn.active {
+            background-color: #3b82f6;
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .subject-buttons {
+                overflow-x: auto;
+                white-space: nowrap;
+                padding-bottom: 8px;
+            }
+            .subject-btn {
+                display: inline-block;
+                margin-right: 8px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <div class="container mx-auto max-w-4xl flex-grow flex flex-col p-4">
+        <!-- Header -->
+        <header class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-blue-600">Ask your AI Tutor</h1>
+            <p class="text-gray-600 mt-2">Get instant help with your academic questions</p>
+        </header>
+        
+        <!-- Subject Buttons -->
+        <div class="subject-buttons flex flex-wrap justify-center gap-2 mb-4">
+            <button class="subject-btn bg-white px-4 py-2 rounded-full border border-gray-300 hover:bg-gray-50 transition-all duration-200" data-subject="Mathematics">
+                <i class="fas fa-calculator mr-2"></i> Mathematics
+            </button>
+            <button class="subject-btn bg-white px-4 py-2 rounded-full border border-gray-300 hover:bg-gray-50 transition-all duration-200" data-subject="Physics">
+                <i class="fas fa-atom mr-2"></i> Physics
+            </button>
+            <button class="subject-btn bg-white px-4 py-2 rounded-full border border-gray-300 hover:bg-gray-50 transition-all duration-200" data-subject="Algebra">
+                <i class="fas fa-square-root-alt mr-2"></i> Algebra
+            </button>
+            <button class="subject-btn bg-white px-4 py-2 rounded-full border border-gray-300 hover:bg-gray-50 transition-all duration-200" data-subject="Geometry">
+                <i class="fas fa-shapes mr-2"></i> Geometry
+            </button>
+            <button class="subject-btn bg-white px-4 py-2 rounded-full border border-gray-300 hover:bg-gray-50 transition-all duration-200" data-subject="Trigonometry">
+                <i class="fas fa-chart-pie mr-2"></i> Trigonometry
+            </button>
+            <button class="subject-btn bg-white px-4 py-2 rounded-full border border-gray-300 hover:bg-gray-50 transition-all duration-200" data-subject="Calculus">
+                <i class="fas fa-infinity mr-2"></i> Calculus
+            </button>
+        </div>
+        
+        <!-- Chat Container -->
+        <div class="chat-container flex-grow bg-white rounded-lg shadow-md p-4 mb-4 overflow-y-auto">
+            <div class="welcome-message text-center py-8 px-4">
+                <div class="inline-block bg-blue-100 text-blue-800 px-6 py-4 rounded-xl max-w-md">
+                    <i class="fas fa-robot text-2xl mb-2"></i>
+                    <h3 class="font-bold text-lg mb-1">Hello! I'm your AI Tutor</h3>
+                    <p class="text-sm">Select a subject above and ask me anything. I'm here to help you learn!</p>
+                </div>
+            </div>
+            <!-- Messages will be inserted here by JavaScript -->
+        </div>
+        
+        <!-- Input Area -->
+        <div class="input-area bg-white rounded-lg shadow-md p-4">
+            <div class="flex gap-2">
+                <input type="text" id="user-input" placeholder="Type your question here..." 
+                       class="flex-grow px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button id="send-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-200">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            <div class="mt-2 text-xs text-gray-500 flex items-center">
+                <i class="fas fa-info-circle mr-1"></i> Press Enter to send or click the button
+            </div>
+            
+            <!-- File upload -->
+            <div class="mt-4 flex items-center space-x-3">
+                <input type="file" id="problem-upload" accept="image/*" class="hidden">
+                <button id="select-file-btn" type="button" class="bg-blue-600 text-white px-4 py-2 rounded-lg">
+                    <i class="fas fa-upload mr-2"></i> Upload Problem Image
+                </button>
+                <span id="selected-file-name" class="text-gray-700"></span>
+            </div>
+            <div class="mt-4 flex items-center space-x-2">
+                <input type="checkbox" id="audio-toggle" class="h-4 w-4 text-blue-600">
+                <label for="audio-toggle" class="text-sm text-gray-700">
+                    Enable voice response
+                </label>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="bg-white py-4 border-t border-gray-200">
+        <div class="container mx-auto text-center text-gray-500 text-sm">
+            <p>AI Tutor v1.0 • Educational assistance powered by AI</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const chatContainer = document.querySelector('.chat-container');
+            const userInput = document.getElementById('user-input');
+            const sendBtn = document.getElementById('send-btn');
+            const subjectButtons = document.querySelectorAll('.subject-btn');
+            let currentSubject = 'Mathematics';
+
+            subjectButtons[0].classList.add('active');
+
+            subjectButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    subjectButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    currentSubject = this.dataset.subject;
+                    addMessage('system', `Now focusing on ${currentSubject}. Ask me anything about this subject!`);
+                });
+            });
+
+            function sendMessage() {
+                const message = userInput.value.trim();
+                if (message === '') return;
+
+                addMessage('user', message);
+                userInput.value = '';
+
+                const useAudio = document.getElementById('audio-toggle').checked;
+                const endpoint = useAudio ? "chat_audio" : "chat";
+
+                fetch(`http://localhost:5000/${endpoint}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: message, subject: currentSubject })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    addMessage("ai", data.response || "No response");
+
+                    if (useAudio && data.audio) {
+                        const audioBytes = Uint8Array.from(atob(data.audio), c => c.charCodeAt(0));
+                        const blob = new Blob([audioBytes], { type: 'audio/wav' });
+                        const url = URL.createObjectURL(blob);
+                        const audio = new Audio(url);
+                        audio.play();
+                    }
+                })
+                .catch(() => {
+                    addMessage("system", "Error: Could not connect to AI backend.");
+                });
+            }
+
+            // Handle file upload for math/physics problems
+            const fileInput = document.getElementById('problem-upload');
+            const selectFileBtn = document.getElementById('select-file-btn');
+            const selectedFileName = document.getElementById('selected-file-name');
+
+            selectFileBtn.addEventListener('click', () => fileInput.click());
+
+            fileInput.addEventListener('change', async function () {
+                if (fileInput.files.length > 0) {
+                    selectedFileName.textContent = fileInput.files[0].name;
+                    
+                    const formData = new FormData();
+                    formData.append('problem_image', fileInput.files[0]);
+
+                    try {
+                        const response = await fetch('http://localhost:5000/upload_problem', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const data = await response.json();
+                        addMessage('ai', `Extracted info: ${data.text || 'No data found'}`);
+                    } catch (error) {
+                        addMessage('ai', 'Error uploading the image');
+                    }
+                }
+            });
+
+            function addMessage(sender, text) {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message', 'mb-4');
+
+                if (sender === 'user') {
+                    messageDiv.innerHTML = `
+                        <div class="flex justify-end">
+                            <div class="bg-blue-600 text-white px-4 py-3 rounded-lg max-w-xs md:max-w-md lg:max-w-lg">
+                                ${text}
+                            </div>
+                        </div>
+                    `;
+                } else if (sender === 'ai') {
+                    messageDiv.innerHTML = `
+                        <div class="flex justify-start">
+                            <div class="bg-gray-200 text-gray-800 px-4 py-3 rounded-lg max-w-xs md:max-w-md lg:max-w-lg">
+                                <div class="font-bold text-blue-600 mb-1">AI Tutor</div>
+                                ${text}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                chatContainer.appendChild(messageDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+
+                if (window.MathJax) {
+                    MathJax.typesetPromise([messageDiv]);
+}
+
+            }
+
+            sendBtn.addEventListener('click', sendMessage);
+            userInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+        });
+    </script>
+<script>
+    window.MathJax = {
+        tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+        svg: { fontCache: 'global' }
+    };
+    </script>
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+</body>
+</html>
