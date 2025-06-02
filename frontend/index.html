@@ -161,9 +161,11 @@
                 userInput.value = '';
 
                 const useAudio = document.getElementById('audio-toggle').checked;
-                const endpoint = useAudio ? "chat_audio" : "chat";
+                const textEndpoint = "chat";
+                const audioEndpoint = "chat_audio";
 
-                fetch(`http://localhost:5000/${endpoint}`, {
+                // Step 1: Get text
+                fetch(`http://localhost:5000/${textEndpoint}`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ message: message, subject: currentSubject })
@@ -172,12 +174,22 @@
                 .then(data => {
                     addMessage("ai", data.response || "No response");
 
-                    if (useAudio && data.audio) {
-                        const audioBytes = Uint8Array.from(atob(data.audio), c => c.charCodeAt(0));
-                        const blob = new Blob([audioBytes], { type: 'audio/wav' });
-                        const url = URL.createObjectURL(blob);
-                        const audio = new Audio(url);
-                        audio.play();
+                    // Step 2: If audio is enabled, fetch audio
+                    if (useAudio) {
+                        fetch(`http://localhost:5000/${audioEndpoint}`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ message: message, subject: currentSubject })
+                        })
+                        .then(res => res.json())
+                        .then(audioData => {
+                            if (audioData.audio) {
+                                const audioBytes = Uint8Array.from(atob(audioData.audio), c => c.charCodeAt(0));
+                                const blob = new Blob([audioBytes], { type: 'audio/wav' });
+                                const url = URL.createObjectURL(blob);
+                                new Audio(url).play();
+                            }
+                        });
                     }
                 })
                 .catch(() => {

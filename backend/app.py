@@ -90,20 +90,27 @@ def upload_problem():
 def chat_audio():
     data = request.get_json()
     message = data.get("message", "")
+    subject = data.get("subject", "")
 
     try:
+        prompt = f"You are a helpful tutor in {subject}. Answer the following question clearly and didactically."
+
         response = client.chat.completions.create(
             model="gpt-4o-audio-preview",
             modalities=["text", "audio"],
             audio={"voice": "alloy", "format": "wav"},
             messages=[
+                {"role": "system", "content": prompt},
                 {"role": "user", "content": message}
             ],
             store=True
         )
 
         audio_b64 = response.choices[0].message.audio.data
+        # <-- Try to get the text, fallback to reusing the original message
         text_response = response.choices[0].message.content
+        if text_response is None:
+            text_response = "[Audio response generated. Text unavailable.]"
 
         return jsonify({
             "response": text_response,
@@ -112,6 +119,7 @@ def chat_audio():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
