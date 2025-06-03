@@ -187,12 +187,12 @@
                     // Push assistant message to memory
                     messageHistory.push({ role: "assistant", content: reply });
 
-                    // Step 2: If audio is enabled, generate audio (same input)
+                    // Step 2: If audio is enabled, generate audio from current message only
                     if (useAudio) {
                         fetch(`http://localhost:5000/${audioEndpoint}`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ messages: messageHistory, subject: currentSubject })
+                            body: JSON.stringify({ message: message, subject: currentSubject })  // ONLY last user message
                         })
                         .then(res => res.json())
                         .then(audioData => {

@@ -24,11 +24,11 @@ def chat():
     messages = data.get("messages", [])
     subject = data.get("subject", "")
 
-    # Add a system prompt at the beginning
-    messages.insert(0, {
+    # Prepend a system prompt for consistent behavior
+    messages = [{
         "role": "system",
-        "content": f"You are a helpful tutor specialized in {subject}. Explain clearly and contextually."
-    })
+        "content": f"You are a helpful and didactic tutor specialized in {subject}. Keep track of the conversation and explain concepts clearly."
+    }] + messages
 
     try:
         response = client.chat.completions.create(
@@ -94,28 +94,32 @@ def upload_problem():
 @app.route("/chat_audio", methods=["POST"])
 def chat_audio():
     data = request.get_json()
-    message = data.get("message", "")
-    subject = data.get("subject", "")
+    message = data.get("message", "")  # required
+    subject = data.get("subject", "")  # optional
+
+    # Build clear, minimal message format for GPT-4o audio model
+    messages = [
+        {
+            "role": "system",
+            "content": f"You are a helpful math and physics tutor specialized in {subject}. Be clear and didactic. Solve problems directly if asked."
+        },
+        {
+            "role": "user",
+            "content": message
+        }
+    ]
 
     try:
-        prompt = f"You are a helpful tutor in {subject}. Answer the following question clearly and didactically."
-
         response = client.chat.completions.create(
             model="gpt-4o-audio-preview",
             modalities=["text", "audio"],
             audio={"voice": "alloy", "format": "wav"},
-            messages=[
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": message}
-            ],
+            messages=messages,
             store=True
         )
 
         audio_b64 = response.choices[0].message.audio.data
-        # <-- Try to get the text, fallback to reusing the original message
-        text_response = response.choices[0].message.content
-        if text_response is None:
-            text_response = "[Audio response generated. Text unavailable.]"
+        text_response = response.choices[0].message.content or "[Audio generated, but no text returned.]"
 
         return jsonify({
             "response": text_response,
@@ -124,7 +128,6 @@ def chat_audio():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 if __name__ == '__main__':
     app.run(debug=True)
