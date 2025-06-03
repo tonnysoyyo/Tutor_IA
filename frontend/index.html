@@ -134,6 +134,12 @@
         </div>
     </footer>
 
+    <!-- Memory storage -->
+    <script>
+        let messageHistory = [];
+    </script>
+
+    <!-- Main chat script -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const chatContainer = document.querySelector('.chat-container');
@@ -164,22 +170,29 @@
                 const textEndpoint = "chat";
                 const audioEndpoint = "chat_audio";
 
-                // Step 1: Get text
+                // Push user message to memory
+                messageHistory.push({ role: "user", content: message });
+
+                // Step 1: Get text response with memory
                 fetch(`http://localhost:5000/${textEndpoint}`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ message: message, subject: currentSubject })
+                    body: JSON.stringify({ messages: messageHistory, subject: currentSubject })
                 })
                 .then(res => res.json())
                 .then(data => {
-                    addMessage("ai", data.response || "No response");
+                    const reply = data.response || "No response";
+                    addMessage("ai", reply);
 
-                    // Step 2: If audio is enabled, fetch audio
+                    // Push assistant message to memory
+                    messageHistory.push({ role: "assistant", content: reply });
+
+                    // Step 2: If audio is enabled, generate audio (same input)
                     if (useAudio) {
                         fetch(`http://localhost:5000/${audioEndpoint}`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ message: message, subject: currentSubject })
+                            body: JSON.stringify({ messages: messageHistory, subject: currentSubject })
                         })
                         .then(res => res.json())
                         .then(audioData => {

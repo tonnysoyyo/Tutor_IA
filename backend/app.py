@@ -21,21 +21,26 @@ def serve_index():
 @app.route("/chat", methods=["POST"])
 def chat():
     data = request.get_json()
-    message = data.get('message', '')
-    subject = data.get('subject', '')
+    messages = data.get("messages", [])
+    subject = data.get("subject", "")
 
-    # Process message with the AI model
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": f"You're a tutor in {subject}. Answer the questions clearly and didactically."},
-            {"role": "user", "content": message}
-        ],
-        temperature=0,
-    )
+    # Add a system prompt at the beginning
+    messages.insert(0, {
+        "role": "system",
+        "content": f"You are a helpful tutor specialized in {subject}. Explain clearly and contextually."
+    })
 
-    answer = response.choices[0].message.content
-    return jsonify({"response": answer})
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages,
+            temperature=0
+        )
+        answer = response.choices[0].message.content
+        return jsonify({ "response": answer })
+
+    except Exception as e:
+        return jsonify({ "response": f"Error: {str(e)}" })
 
 def upload_image_to_imgur(filepath):
     headers = {
